@@ -1,1 +1,44 @@
 :root{font-family:system-ui,'Malgun Gothic',sans-serif;color:#17243a;background:#f1f5fa}*{box-sizing:border-box}body{margin:0}header{background:#233c75;color:white;padding:14px max(20px,calc((100vw - 1300px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-size:23px;margin:0}h2{margin-top:0}h3{margin:0 0 12px}main{max-width:1300px;margin:20px auto;padding:0 12px}.panel{background:white;border-radius:15px;padding:18px;box-shadow:0 3px 14px #24385c12;margin-bottom:14px}#login{max-width:440px;margin:50px auto}label:not(.check){display:block;font-weight:600;margin:13px 0}input:not([type=checkbox]):not([type=range]),textarea{width:100%;padding:11px;border:1px solid #cad3e0;border-radius:9px;font:inherit;margin-top:6px}button{background:#3866db;color:white;border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;font:inherit}button:hover{filter:brightness(.93)}button:disabled{opacity:.5;cursor:not-allowed}.secondary{background:#e5ebf7;color:#1f3c73}.danger{background:#c94455}.error{color:#c32d43}.check{display:flex;gap:8px;align-items:center}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700}.top #timer{font-size:26px;color:#dc4252}.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px}.board{min-width:0}.canvasWrap{position:relative;border:2px solid #dce3ee;border-radius:10px;overflow:hidden;background:white}canvas{width:100%;height:auto;display:block;touch-action:none;cursor:crosshair}.overlay{position:absolute;inset:0;background:#ffffffed;display:flex;align-items:center;justify-content:center;text-align:center;font-size:25px;font-weight:800;padding:25px}.overlay[hidden]{display:none}.tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px}.tools label{margin:0!important}.tools input{vertical-align:middle}#colors{display:flex;flex-wrap:wrap;gap:5px}.color{width:25px;height:25px;padding:0;border:2px solid #c5cad5}.color.selected{outline:3px solid #4269f0}.teacherTools{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}.teacherTools details{flex-basis:100%}.teacherTools textarea{display:block}#players{display:grid;gap:7px}.player{display:flex;justify-content:space-between;border-bottom:1px solid #edf0f5;padding:6px 0}.player.guessed{color:#12844b}.chatPanel{display:flex;flex-direction:column;height:390px}#messages{flex:1;overflow:auto;font-size:14px;word-break:break-word}.message{padding:5px 0;border-bottom:1px solid #f1f2f5}#chatForm{display:flex;gap:5px}#chatInput{min-width:0}#chatForm button{align-self:end}.muted{color:#6e7c90}details{padding:10px;background:#f2f5fb;border-radius:9px}summary{cursor:pointer;font-weight:700}@media(max-width:800px){.layout{grid-template-columns:1fr}aside{display:grid;grid-template-columns:1fr 1fr;gap:12px}.chatPanel{height:320px}}@media(max-width:540px){aside{grid-template-columns:1fr}.top{flex-wrap:wrap}header h1{font-size:18px}}
+
+/* v2: prominent word choice and round information */
+.wordStatus{flex:1;text-align:center;min-width:160px}.wordStatus #drawerName{font-size:19px;color:#173d86;font-weight:900}.wordStatus #hint{margin-top:5px;font-size:22px;letter-spacing:1px;overflow-wrap:anywhere}.overlay{z-index:5}.wordPicker{width:min(100%,560px);background:#fff;border:4px solid #436be7;border-radius:22px;padding:22px 18px;box-shadow:0 12px 40px #1a316344;display:flex;flex-direction:column;align-items:stretch;gap:12px}.wordPicker h2{font-size:clamp(22px,3vw,32px);margin:0;color:#1b3d84}.wordPicker p{font-size:15px;color:#57647c;margin:0 0 5px}.wordOption{font-size:clamp(21px,3vw,30px);font-weight:900;min-height:67px;border:2px solid #294bb2;background:#3866db;box-shadow:0 4px 0 #244caa}.wordOption:nth-of-type(2){background:#167f82;border-color:#126568;box-shadow:0 4px 0 #0c5c60}.wordOption:nth-of-type(3){background:#9652a9;border-color:#77398b;box-shadow:0 4px 0 #663179}.wordOption:disabled{opacity:.6}.top #phase{min-width:130px}.top #timer{min-width:65px;text-align:right}@media(max-width:540px){.wordStatus #drawerName{font-size:16px}.wordStatus #hint{font-size:18px}.wordPicker{padding:12px 8px}.wordOption{min-height:58px}}
+
+/* v6: On phones, put the answer box immediately below the drawing.
+   Show the input BEFORE the chat history, so students do not have to
+   scroll past the player rankings or old messages to answer. */
+@media (max-width: 800px) {
+  .layout > aside {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+  }
+  .layout > aside > .chatPanel {
+    order: -1;
+    height: auto;
+    min-width: 0;
+  }
+  .chatPanel #chatForm {
+    order: 1;
+    align-items: stretch;
+    margin-bottom: 8px;
+  }
+  .chatPanel #chatInput {
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: 16px;
+    margin-top: 0;
+  }
+  .chatPanel #chatForm button {
+    align-self: stretch;
+    flex: 0 0 auto;
+  }
+  .chatPanel #messages {
+    order: 2;
+    flex: 0 0 auto;
+    height: 145px;
+    overflow-y: auto;
+    border-top: 1px solid #edf0f5;
+    padding-top: 5px;
+  }
+}
