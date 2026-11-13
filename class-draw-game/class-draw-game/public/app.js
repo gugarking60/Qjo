@@ -1,0 +1,32 @@
+const socket=io();const $=id=>document.getElementById(id);let myId=null,isTeacher=false,state=null,myWord='',selectedColor='#111111',size=5,drawing=false,prev=null,clock=null;
+const canvas=$('canvas'),ctx=canvas.getContext('2d');ctx.lineCap='round';ctx.lineJoin='round';
+const colors=['#111111','#e53935','#fb8c00','#fdd835','#43a047','#00acc1','#1e88e5','#8e24aa','#795548','#ffffff'];
+colors.forEach(c=>{const b=document.createElement('button');b.className='color';b.style.background=c;b.title=c;b.onclick=()=>{selectedColor=c;document.querySelectorAll('.color').forEach(x=>x.classList.toggle('selected',x===b))};$('colors').append(b)});document.querySelector('.color').classList.add('selected');
+$('size').oninput=e=>size=Number(e.target.value);$('eraser').onclick=()=>{selectedColor='#ffffff';document.querySelectorAll('.color').forEach(x=>x.classList.remove('selected'))};$('clear').onclick=()=>socket.emit('clear');
+$('join').onclick=()=>{socket.emit('join',{name:$('name').value,code:$('code').value,password:$('password').value,teacher:$('teacher').checked},r=>{if(!r?.ok){$('loginError').textContent=r?.error||'입장 실패';return}myId=r.id;isTeacher=r.teacher;$('login').hidden=true;$('game').hidden=false;$('teacherTools').hidden=!isTeacher;drawBlank()})};
+$('start').onclick=()=>socket.emit('start');$('next').onclick=()=>socket.emit('next');$('reset').onclick=()=>{if(confirm('게임을 초기화할까요?'))socket.emit('reset')};$('saveWords').onclick=()=>socket.emit('set-words',$('wordInput').value,r=>alert(r.ok?`${r.count}개 단어 등록 완료`:r.error));
+$('chatForm').onsubmit=e=>{e.preventDefault();const input=$('chatInput');if(input.value.trim())socket.emit('chat',input.value);input.value='';input.focus()};
+function message(name,content,kind=''){const el=document.createElement('div');el.className='message '+kind;const strong=document.createElement('strong');strong.textContent=name?name+': ':'';el.append(strong,document.createTextNode(content));$('messages').append(el);if($('messages').children.length>120)$('messages').firstChild.remove();$('messages').scrollTop=$('messages').scrollHeight}
+function drawBlank(){ctx.fillStyle='white';ctx.fillRect(0,0,900,600)}drawBlank();
+function stroke(s){ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=s.size;ctx.beginPath();if(s.type==='dot'){ctx.arc(s.x*900,s.y*600,s.size/2,0,Math.PI*2);ctx.fill()}else{ctx.moveTo(s.px*900,s.py*600);ctx.lineTo(s.x*900,s.y*600);ctx.stroke()}}
+function point(e){const r=canvas.getBoundingClientRect();return{x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
+function allowed(){return state?.phase==='drawing'&&state.drawerId===myId}
+canvas.addEventListener('pointerdown',e=>{if(!allowed())return;drawing=true;canvas.setPointerCapture(e.pointerId);prev=point(e);const s={type:'dot',...prev,px:prev.x,py:prev.y,color:selectedColor,size};stroke(s);socket.emit('stroke',s)});
+canvas.addEventListener('pointermove',e=>{if(!drawing||!allowed())return;const p=point(e),s={type:'line',...p,px:prev.x,py:prev.y,color:selectedColor,size};stroke(s);socket.emit('stroke',s);prev=p});
+['pointerup','pointercancel','lostpointercapture'].forEach(t=>canvas.addEventListener(t,()=>drawing=false));
+socket.on('stroke',stroke);socket.on('canvas-clear',drawBlank);socket.on('canvas-sync',list=>{drawBlank();list.forEach(stroke)});
+socket.on('connect',()=>{$('status').textContent='🟢 서버 연결됨';if(myId){myId=null;$('game').hidden=true;$('login').hidden=false;$('loginError').textContent='연결이 다시 시작됐어요. 재입장해 주세요.'}});
+socket.on('disconnect',()=>{$('status').textContent='🔴 연결 끊김'});
+socket.on('state',s=>{state=s;const me=s.players.find(p=>p.id===myId);$('count').textContent=`(${s.players.filter(p=>!p.teacher).length}/17)`;$('players').replaceChildren();[...s.players].sort((a,b)=>b.score-a.score).forEach((p,i)=>{const row=document.createElement('div');row.className='player'+(s.guessed.includes(p.id)?' guessed':'');const name=document.createElement('span');name.textContent=`${i+1}. ${p.teacher?'👩‍🏫 ':''}${p.id===s.drawerId?'✏️ ':''}${p.name}`;const score=document.createElement('b');score.textContent=p.teacher?'관리자':`${p.score}점`;row.append(name,score);$('players').append(row)});
+ const phaseNames={lobby:'대기실',choosing:'단어 선택 중',drawing:`${s.round}/${s.rounds} 라운드 · ${s.turnIndex}/${s.totalTurns}번째`,reveal:'정답 공개',finished:'게임 종료'};$('phase').textContent=phaseNames[s.phase]||s.phase;
+ const drawer=s.players.find(p=>p.id===s.drawerId);$('tools').hidden=!allowed();$('start').disabled=s.phase!=='lobby';$('next').disabled=!['drawing','choosing'].includes(s.phase);
+ if(s.phase==='lobby'){$('hint').textContent='선생님이 시작하면 게임이 진행돼요.';showOverlay('게임 시작을 기다리는 중');myWord=''}
+ else if(s.phase==='choosing'){$('hint').textContent=`${drawer?.name||'학생'}: 단어 선택 중` ;showOverlay(s.drawerId===myId?'아래에서 단어를 선택하세요':'그림 그릴 학생이 단어를 고르는 중')}
+ else if(s.phase==='drawing'){$('hint').textContent=s.drawerId===myId?`내 단어: ${myWord||'선택한 단어'}`:`${drawer?.name||'학생'}의 그림 · ${'□'.repeat(window.wordLength||0)} (${window.wordLength||'?'}글자)`;hideOverlay()}
+ else if(s.phase==='finished'){$('hint').textContent='최종 순위를 확인하세요!';showOverlay('🏆 게임 종료! 선생님이 초기화할 수 있어요.')}
+ updateClock();});
+setInterval(updateClock,250);
+function showOverlay(t){$('overlay').textContent=t;$('overlay').hidden=false}function hideOverlay(){$('overlay').hidden=true}
+function updateClock(){if(!state)return;$('timer').textContent=state.endsAt?`${Math.max(0,Math.ceil((state.endsAt-Date.now())/1000))}초`:'--';}
+socket.on('word-options',opts=>{const ov=$('overlay');ov.replaceChildren();ov.hidden=false;const holder=document.createElement('div');const title=document.createElement('p');title.textContent='그릴 단어를 선택하세요';holder.append(title);opts.forEach(w=>{const b=document.createElement('button');b.textContent=w;b.style.margin='5px';b.onclick=()=>socket.emit('choose-word',w);holder.append(b)});ov.append(holder)});
+socket.on('your-word',w=>{myWord=w;$('hint').textContent=`내 단어: ${w}`;hideOverlay()});socket.on('word-hint',v=>{window.wordLength=v.length});socket.on('notice',v=>message('📢',v));socket.on('chat',v=>message(v.name,v.message));socket.on('correct',v=>message('✅',`${v.name} 정답! +${v.points}점`,'correct'));socket.on('reveal',v=>{showOverlay(`정답: ${v.answer}`);message('정답',v.answer)});socket.on('finished',()=>message('🏆','게임이 끝났어요!'));
